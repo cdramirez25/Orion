@@ -1,114 +1,83 @@
 import { useState } from "react";
-import { MethodSelector } from "./components/request/MethodSelector";
-import { HeadersEditor } from "./components/request/HeadersEditor";
-import { BodyEditor } from "./components/request/BodyEditor";
-import { ResponseViewer } from "./components/response/ResponseViewer";
-import { useRequestStore } from "./store/requestStore";
-import { Send, Loader2, History, FolderOpen, Settings, Zap } from "lucide-react";
+import { RequestPage } from "./pages/RequestPage";
+import { Zap, FolderOpen, History, Settings } from "lucide-react";
 
-type RequestTab = "headers" | "body";
+type Page = "request" | "collections" | "history" | "settings";
+
+const NAV_ITEMS = [
+  { id: "collections" as Page, icon: FolderOpen, label: "Collections" },
+  { id: "history"     as Page, icon: History,    label: "History" },
+];
 
 export default function App() {
-  const { method, url, isLoading, response, error, setMethod, setUrl, sendRequest } = useRequestStore();
-  const [requestTab, setRequestTab] = useState<RequestTab>("headers");
-
-  const handleSend = () => { if (url.trim()) sendRequest(); };
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleSend();
-  };
+  const [activePage, setActivePage] = useState<Page>("request");
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-200 overflow-hidden text-sm">
 
       {/* Sidebar */}
       <aside className="w-12 shrink-0 flex flex-col items-center py-3 gap-1 bg-zinc-900 border-r border-zinc-800">
-        <div className="w-7 h-7 rounded bg-violet-600 flex items-center justify-center mb-4">
+        {/* Logo — siempre lleva a request */}
+        <button
+          onClick={() => setActivePage("request")}
+          className={`w-7 h-7 rounded flex items-center justify-center mb-4 transition-colors ${
+            activePage === "request" ? "bg-violet-600" : "bg-zinc-700 hover:bg-violet-600"
+          }`}
+        >
           <Zap size={14} className="text-white" />
-        </div>
-        {[
-          { icon: FolderOpen, label: "Collections" },
-          { icon: History, label: "History" },
-        ].map(({ icon: Icon, label }) => (
-          <button key={label} title={label}
-            className="w-8 h-8 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+        </button>
+
+        {NAV_ITEMS.map(({ id, icon: Icon, label }) => (
+          <button
+            key={id}
+            title={label}
+            onClick={() => setActivePage(id)}
+            className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+              activePage === id
+                ? "bg-zinc-700 text-violet-400"
+                : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+            }`}
+          >
             <Icon size={16} />
           </button>
         ))}
+
         <div className="flex-1" />
-        <button title="Settings"
-          className="w-8 h-8 flex items-center justify-center rounded text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 transition-colors">
+
+        <button
+          title="Settings"
+          onClick={() => setActivePage("settings")}
+          className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
+            activePage === "settings"
+              ? "bg-zinc-700 text-violet-400"
+              : "text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800"
+          }`}
+        >
           <Settings size={16} />
         </button>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 flex flex-col min-w-0">
+      {/* Page content */}
+      <main className="flex-1 flex min-w-0 min-h-0 overflow-hidden">
+        {activePage === "request" && <RequestPage />}
 
-        {/* URL Bar */}
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 bg-zinc-900">
-          <div className="flex-1 flex items-center rounded border border-zinc-700 bg-zinc-950 overflow-hidden focus-within:border-violet-500 transition-colors">
-            <MethodSelector value={method} onChange={setMethod} />
-            <div className="w-px h-4 bg-zinc-700" />
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Enter URL or paste text"
-              className="flex-1 bg-transparent px-3 py-1.5 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none"
-            />
+        {activePage === "collections" && (
+          <div className="flex-1 flex items-center justify-center text-zinc-700">
+            <p>Collections — coming soon</p>
           </div>
-          <button
-            onClick={handleSend}
-            disabled={isLoading || !url.trim()}
-            className="flex items-center gap-2 px-4 py-1.5 rounded bg-violet-600 hover:bg-violet-500 disabled:bg-zinc-800 disabled:text-zinc-600 text-white text-sm font-medium transition-colors shrink-0"
-          >
-            {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-            Send
-          </button>
-        </div>
+        )}
 
-        {/* Request Panel */}
-        <div className="flex flex-col border-b border-zinc-800" style={{ height: "42%" }}>
-          <div className="flex px-3 border-b border-zinc-800 bg-zinc-900">
-            {(["headers", "body"] as RequestTab[]).map((tab) => (
-              <button key={tab} onClick={() => setRequestTab(tab)}
-                className={`px-3 py-2 text-xs font-medium capitalize transition-colors border-b-2 -mb-px ${
-                  requestTab === tab
-                    ? "border-violet-500 text-violet-400"
-                    : "border-transparent text-zinc-500 hover:text-zinc-300"
-                }`}>
-                {tab}
-              </button>
-            ))}
+        {activePage === "history" && (
+          <div className="flex-1 flex items-center justify-center text-zinc-700">
+            <p>History — coming soon</p>
           </div>
-          <div className="flex-1 overflow-hidden bg-zinc-950">
-            {requestTab === "headers" ? <HeadersEditor /> : <BodyEditor />}
-          </div>
-        </div>
+        )}
 
-        {/* Response Panel */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-zinc-950">
-          {!response && !error && !isLoading && (
-            <div className="flex flex-col items-center justify-center h-full gap-2 select-none">
-              <Send size={24} className="text-zinc-700" strokeWidth={1.5} />
-              <p className="text-zinc-600 text-sm">Send a request to see the response</p>
-            </div>
-          )}
-          {isLoading && (
-            <div className="flex items-center justify-center h-full gap-2 text-zinc-500">
-              <Loader2 size={15} className="animate-spin text-violet-500" />
-              <span className="text-sm">Sending...</span>
-            </div>
-          )}
-          {error && (
-            <div className="m-4 p-3 rounded border border-red-900 bg-red-950/30">
-              <p className="text-red-400 text-xs font-semibold mb-1">Request Failed</p>
-              <p className="text-red-300/60 text-xs font-mono">{error}</p>
-            </div>
-          )}
-          {response && <ResponseViewer response={response} />}
-        </div>
+        {activePage === "settings" && (
+          <div className="flex-1 flex items-center justify-center text-zinc-700">
+            <p>Settings — coming soon</p>
+          </div>
+        )}
       </main>
     </div>
   );
