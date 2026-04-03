@@ -22,85 +22,61 @@ function formatSize(bytes: number): string {
 export function ResponseViewer({ response }: Props) {
   const contentType = response.headers["content-type"] || "";
   const isHtml = contentType.includes("text/html");
-
-  const [tab, setTab] = useState<"body" | "headers" | "preview">(
-    isHtml ? "preview" : "body"
-  );
+  const [tab, setTab] = useState<"body" | "headers" | "preview">(isHtml ? "preview" : "body");
 
   const tabs = [
-    { id: "body", label: "Body" },
-    ...(isHtml ? [{ id: "preview", label: "Preview" }] : []),
-    { id: "headers", label: "Headers" },
-  ] as { id: "body" | "headers" | "preview"; label: string }[];
+    { id: "body" as const, label: "Body" },
+    ...(isHtml ? [{ id: "preview" as const, label: "Preview" }] : []),
+    { id: "headers" as const, label: "Headers" },
+  ];
 
   return (
     <div className="flex flex-col h-full">
-      {/* Status bar */}
-      <div className="flex items-center gap-4 px-4 py-2 border-b border-zinc-800 bg-zinc-900/40 shrink-0">
+      <div className="flex items-center gap-3 px-3 py-1.5 border-b border-zinc-800 bg-zinc-900 shrink-0">
         <StatusBadge status={response.status} />
-        <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-mono">
+        <div className="flex items-center gap-1 text-zinc-600 text-xs font-mono">
           <Clock size={11} /> <span>{response.duration_ms}ms</span>
         </div>
-        <div className="flex items-center gap-1.5 text-zinc-500 text-xs font-mono">
+        <div className="flex items-center gap-1 text-zinc-600 text-xs font-mono">
           <HardDrive size={11} /> <span>{formatSize(response.size_bytes)}</span>
         </div>
-
-        {/* Tabs */}
-        <div className="flex gap-0 ml-auto">
+        <div className="flex ml-auto">
           {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all border-b-2 ${
+            <button key={t.id} onClick={() => setTab(t.id)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors border-b-2 -mb-px ${
                 tab === t.id
-                  ? "border-sky-500 text-sky-400"
+                  ? "border-violet-500 text-violet-400"
                   : "border-transparent text-zinc-500 hover:text-zinc-300"
-              }`}
-            >
+              }`}>
               {t.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Content */}
       <div className="flex-1 overflow-auto">
-        {/* Body — JSON / texto */}
         {tab === "body" && (
           <pre className="p-4 text-xs font-mono text-zinc-300 leading-relaxed whitespace-pre-wrap break-all">
             {formatBody(response.body, contentType) || (
-              <span className="text-zinc-600 italic">Empty response body</span>
+              <span className="text-zinc-600 italic">Empty body</span>
             )}
           </pre>
         )}
-
-        {/* Preview — HTML renderizado en iframe */}
         {tab === "preview" && (
-          <iframe
-            srcDoc={response.body}
-            sandbox="allow-same-origin"
-            className="w-full h-full border-none bg-white"
-            title="Response Preview"
-          />
+          <iframe srcDoc={response.body} sandbox="allow-same-origin"
+            className="w-full h-full border-none bg-white" title="Preview" />
         )}
-
-        {/* Headers */}
         {tab === "headers" && (
-          <div className="p-4">
-            <p className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest mb-3">
-              {Object.keys(response.headers).length} Headers
+          <div className="p-3">
+            <p className="text-[10px] font-medium text-zinc-600 uppercase tracking-wider mb-2">
+              {Object.keys(response.headers).length} headers
             </p>
-            <div className="space-y-0.5">
-              {Object.entries(response.headers).map(([key, value]) => (
-                <div
-                  key={key}
-                  className="grid grid-cols-2 gap-4 px-2 py-1.5 rounded-lg hover:bg-zinc-800/40 transition-colors"
-                >
-                  <span className="text-xs font-mono text-sky-400 truncate">{key}</span>
-                  <span className="text-xs font-mono text-zinc-400 truncate">{value}</span>
-                </div>
-              ))}
-            </div>
+            {Object.entries(response.headers).map(([key, value]) => (
+              <div key={key} className="grid grid-cols-2 gap-4 px-2 py-1 rounded hover:bg-zinc-900 transition-colors">
+                <span className="text-xs font-mono text-violet-400 truncate">{key}</span>
+                <span className="text-xs font-mono text-zinc-400 truncate">{value}</span>
+              </div>
+            ))}
           </div>
         )}
       </div>
