@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { HttpRequest, HttpResponse, HttpMethod } from "../types/http.types";
+import { HttpRequest, HttpResponse, HttpMethod, SavedRequest } from "../types/http.types";
 import { httpService } from "../services/httpService";
 
 interface RequestStore {
@@ -25,6 +25,8 @@ interface RequestStore {
   removeHeader: (index: number) => void;
   sendRequest: () => Promise<void>;
   clearResponse: () => void;
+  loadSavedRequest: (saved: SavedRequest) => void;
+  clearRequest: () => void;
 }
 
 export const useRequestStore = create<RequestStore>((set, get) => ({
@@ -87,4 +89,33 @@ export const useRequestStore = create<RequestStore>((set, get) => ({
   },
 
   clearResponse: () => set({ response: null, error: null }),
+
+  loadSavedRequest: (saved: SavedRequest) => {
+    const headers = Object.entries(saved.request.headers ?? {}).map(([key, value]) => ({
+      key,
+      value,
+      enabled: true,
+    }));
+    if (headers.length === 0) headers.push({ key: "", value: "", enabled: true });
+    set({
+      method: saved.request.method,
+      url: saved.request.url,
+      headers,
+      body: saved.request.body ?? "",
+      activeTab: "headers",
+      response: null,
+      error: null,
+    });
+  },
+
+  clearRequest: () =>
+    set({
+      method: "GET",
+      url: "",
+      headers: [{ key: "", value: "", enabled: true }],
+      body: "",
+      activeTab: "headers",
+      response: null,
+      error: null,
+    }),
 }));
